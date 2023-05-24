@@ -23,7 +23,6 @@ for row in worksheet.iter_rows(min_col=5, max_col=5):
     for cell in row:
         sliced_value = slice_between_substrings(cell.value, "<b>", "</b>")
         if sliced_value is not None:
-            #print(sliced_value)
             phenotypes.append(sliced_value)
 
 phenotype_report = "\n".join(phenotypes)
@@ -37,12 +36,3 @@ response = openai.ChatCompletion.create(
 )
 
 print(response['choices'][0]['message']['content'])
-
-
-
-
-
-
-
-
-

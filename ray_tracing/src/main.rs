@@ -1,6 +1,7 @@
 use std::io::{stdin, stdout, Read, Write};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg};
 use std::process;
+use termion::async_stdin;
 use termion::event::Key;
 use termion::input::Keys;
 use termion::input::TermRead;
@@ -127,13 +128,17 @@ impl Vec3 {
 
 fn main() {
     let mut stdout = stdout().into_raw_mode().unwrap();
+    let mut stdin = async_stdin().bytes();
     write!(stdout, "{}", termion::clear::All);
     stdout.flush().unwrap();
     let size = terminal_size().unwrap();
     // println!("Size: {} {}", size.0, size.1);
 
     loop {
-        let stdin = stdin();
+        let c = stdin.next();
+        if let Some(Ok(b'q')) = c {
+            break;
+        }
         // for c in stdin.keys() {
         //     match c.unwrap() {
         //         Key::Char('q') => process::exit(0), // reset terminal or whatever
@@ -141,6 +146,7 @@ fn main() {
         //     }
         // }
         for row in 0..size.1 {
+            // https://docs.rs/termion/latest/termion/fn.async_stdin.html
             for col in 0..size.0 {
                 termion::cursor::Goto(row, col);
                 write!(stdout, "#");

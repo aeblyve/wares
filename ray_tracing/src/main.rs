@@ -1,5 +1,5 @@
 use std::io::{stdin, stdout, Read, Write};
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
 use std::process;
 use std::{thread, time};
 use termion::async_stdin;
@@ -15,7 +15,19 @@ const BRIGHTNESS_MAP: &str = "WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~
 
 //https://docs.rs/termion/latest/termion/raw/struct.RawTerminal.html
 
+struct Ray3 {
+    pub origin: Vec3,
+    pub direction: Vec3,
+}
+
+impl Ray3 {
+    fn at(self, t: f64) -> Vec3 {
+        self.origin + self.direction * t
+    }
+}
+
 // nalgebra gives us this but eh
+#[derive(Clone, Copy)]
 struct Vec3 {
     pub x: f64,
     pub y: f64,
@@ -30,6 +42,18 @@ impl Add for Vec3 {
             x: self.x + other.x,
             y: self.y + other.y,
             z: self.z + other.z,
+        }
+    }
+}
+
+impl Sub for Vec3 {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+            z: self.z - other.z,
         }
     }
 }
@@ -127,6 +151,20 @@ impl Vec3 {
     }
 }
 
+/// Where 0.0 \leq brightness \leq 1.0
+fn brightness_to_char(brightness: f64) -> char {
+    BRIGHTNESS_MAP
+        .chars()
+        .nth(((brightness * BRIGHTNESS_MAP.len() as f64) as usize - 1))
+        .unwrap()
+}
+
+fn render_ray(r: Ray3) -> char {
+    let unit_dir = r.direction.unit();
+    let t = 0.5 * (unit_dir.y + 1.0);
+    brightness_to_char((1.0 - t) * 1.0 + t * 0.5)
+}
+
 fn main() {
     let mut screen = stdout()
         .into_raw_mode()
@@ -134,12 +172,45 @@ fn main() {
         .into_alternate_screen()
         .unwrap();
     let mut stdin = async_stdin().bytes();
-    //write!(screen, "{}", termion::cursor::Hide).unwrap();
+    write!(screen, "{}", termion::cursor::Hide).unwrap();
     screen.flush().unwrap();
 
     let one_sec = time::Duration::from_millis(1000);
+    let frame_timing = time::Duration::from_millis(16); // roughly 1/60th of second
 
     let size = terminal_size().unwrap();
+
+    let aspect_ratio = size.0 as f64 / size.1 as f64;
+    // width and height are terminal
+
+    let viewport_height = 2.0;
+    let viewport_width = aspect_ratio * viewport_height;
+    let focal_length = 1.0;
+
+    let origin = Vec3 {
+        x: 0.,
+        y: 0.,
+        z: 0.,
+    };
+    let horizontal = Vec3 {
+        x: viewport_width,
+        y: 0.,
+        z: 0.,
+    };
+    let vertical = Vec3 {
+        x: 0.,
+        y: viewport_height,
+        z: 0.,
+    };
+
+    let lower_left_corner = origin
+        - horizontal / 2.
+        - vertical / 2.
+        - Vec3 {
+            x: 0.,
+            y: 0.,
+            z: focal_length,
+        };
 
     loop {
         let c = stdin.next();
@@ -148,16 +219,25 @@ fn main() {
         }
         write!(screen, "{}", termion::clear::All);
         screen.flush().unwrap();
-        // for some reason ANSI escapes are one-based, and column-major-ordered..
+        // for some reason ANSI escapes are one-based.
         for row in 1..=size.1 {
             for col in 1..=size.0 {
-                write!(screen, "{}", termion::cursor::Goto(col, row));
+                let u = col as f64 / size.0 as f64;
+                let v = row as f64 / size.1 as f64;
+                let r = Ray3 {
+                    origin: origin,
+                    direction: lower_left_corner + horizontal * u + vertical * v - origin,
+                };
+                write!(
+                    screen,
+                    "{}{}",
+                    termion::cursor::Goto(col, row),
+                    render_ray(r)
+                );
                 screen.flush().unwrap();
-                //termion::cursor::Goto(row, col);
-                //write!(stdout, "#");
-                //stdout.flush().unwrap();
             }
         }
+        thread::sleep(frame_timing);
     }
-    //write!(screen, "{}", termion::cursor::Show).unwrap();
+    write!(screen, "{}", termion::cursor::Show).unwrap();
 }

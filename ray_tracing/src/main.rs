@@ -134,14 +134,17 @@ fn main() {
 
     loop {
         let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
-                Key::Char('q') => process::exit(0),
-                _ => {}
-            }
-        }
+        // for c in stdin.keys() {
+        //     match c.unwrap() {
+        //         Key::Char('q') => process::exit(0), // reset terminal or whatever
+        //         _ => {println!("")}
+        //     }
+        // }
         for row in 0..size.1 {
             for col in 0..size.0 {
+                termion::cursor::Goto(row, col);
+                write!(stdout, "#");
+                stdout.flush().unwrap();
                 // render at the pixeL!
             }
         }

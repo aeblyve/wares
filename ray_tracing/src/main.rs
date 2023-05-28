@@ -1,12 +1,13 @@
 use std::io::{stdin, stdout, Read, Write};
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg};
 use std::process;
+use std::{thread, time};
 use termion::async_stdin;
 use termion::event::Key;
 use termion::input::Keys;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
-use termion::screen::IntoAlternateScreen;
+use termion::screen::{IntoAlternateScreen, ToAlternateScreen, ToMainScreen};
 use termion::terminal_size;
 
 /// A nice 64 colors == 6 bits
@@ -127,32 +128,36 @@ impl Vec3 {
 }
 
 fn main() {
-    let mut stdout = stdout().into_raw_mode().unwrap();
+    let mut screen = stdout()
+        .into_raw_mode()
+        .unwrap()
+        .into_alternate_screen()
+        .unwrap();
     let mut stdin = async_stdin().bytes();
-    write!(stdout, "{}", termion::clear::All);
-    stdout.flush().unwrap();
+    //write!(screen, "{}", termion::cursor::Hide).unwrap();
+    screen.flush().unwrap();
+
+    let one_sec = time::Duration::from_millis(1000);
+
     let size = terminal_size().unwrap();
-    // println!("Size: {} {}", size.0, size.1);
 
     loop {
         let c = stdin.next();
         if let Some(Ok(b'q')) = c {
             break;
         }
-        // for c in stdin.keys() {
-        //     match c.unwrap() {
-        //         Key::Char('q') => process::exit(0), // reset terminal or whatever
-        //         _ => {println!("")}
-        //     }
-        // }
-        for row in 0..size.1 {
-            // https://docs.rs/termion/latest/termion/fn.async_stdin.html
-            for col in 0..size.0 {
-                termion::cursor::Goto(row, col);
-                write!(stdout, "#");
-                stdout.flush().unwrap();
-                // render at the pixeL!
+        write!(screen, "{}", termion::clear::All);
+        screen.flush().unwrap();
+        // for some reason ANSI escapes are one-based, and column-major-ordered..
+        for row in 1..=size.1 {
+            for col in 1..=size.0 {
+                write!(screen, "{}", termion::cursor::Goto(col, row));
+                screen.flush().unwrap();
+                //termion::cursor::Goto(row, col);
+                //write!(stdout, "#");
+                //stdout.flush().unwrap();
             }
         }
     }
+    //write!(screen, "{}", termion::cursor::Show).unwrap();
 }

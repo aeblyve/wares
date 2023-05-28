@@ -151,6 +151,15 @@ impl Vec3 {
     }
 }
 
+fn hit_sphere(center: Vec3, radius: f64, r: Ray3) -> bool {
+    let oc = r.origin - center;
+    let a = r.direction.dot(r.direction);
+    let b = 2.0 * oc.dot(r.direction);
+    let c = oc.dot(oc) - radius * radius;
+    let discriminant = b * b - 4. * a * c;
+    discriminant > 0.
+}
+
 /// Where 0.0 \leq brightness \leq 1.0
 fn brightness_to_char(brightness: f64) -> char {
     BRIGHTNESS_MAP
@@ -232,7 +241,19 @@ fn main() {
                     screen,
                     "{}{}",
                     termion::cursor::Goto(col, row),
-                    render_ray(r)
+                    if hit_sphere(
+                        Vec3 {
+                            x: 0.,
+                            y: 0.,
+                            z: -1.
+                        },
+                        0.5,
+                        r
+                    ) {
+                        "'"
+                    } else {
+                        "W"
+                    } //render_ray(r)
                 );
                 screen.flush().unwrap();
             }

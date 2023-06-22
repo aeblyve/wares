@@ -1,8 +1,4 @@
-import sys
-import requests
-import time
-import json
-import folium
+import sys, requests, time, json, folium
 
 IP_API_URL = "http://ip-api.com/json/"
 

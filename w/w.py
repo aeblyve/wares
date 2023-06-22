@@ -6,7 +6,9 @@ users = set()
 m = folium.Map()
 with open(sys.argv[1]) as w:
     for line in w:
-        user, pty, ip, time, cmd = line.split()
+        tokens = line.split()
+        user = tokens[0]
+        ip = tokens[2]
         if user not in users: # handle multiple terminals by the same user.
             users.add(user)
             r = json.loads(requests.get(IP_API_URL + ip).content)

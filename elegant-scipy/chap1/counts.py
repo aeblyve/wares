@@ -207,11 +207,9 @@ counts_rpkm = rpkm(counts, gene_lengths)
 log_counts = np.log(counts_rpkm + 1)
 mean_log_counts = np.mean(log_counts, axis=1)
 log_gene_lengths = np.log(gene_lengths)
-lim = binned_boxplot(x=log_gene_lengths, y=mean_log_counts).get_ylim()
 
 with plt.style.context('.//thinner.mplstyle'):
     rpkm_ax = binned_boxplot(x=log_gene_lengths, y=mean_log_counts)
-    rpkm_ax.set_ylim(lim)
     plt.show()
 
 

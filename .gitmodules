@@ -1,0 +1,3 @@
+[submodule "human-gem/Human-GEM"]
+	path = human-gem/Human-GEM
+	url = https://github.com/SysBioChalmers/Human-GEM.git
